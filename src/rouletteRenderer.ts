@@ -154,7 +154,6 @@ export class RouletteRenderer {
     this._theme = renderParameters.theme;
     this.ctx.fillStyle = this._theme.background;
     this.ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
-    this.renderBrandWatermark();
 
     this.ctx.save();
     this.ctx.scale(initialZoom, initialZoom);
@@ -164,6 +163,7 @@ export class RouletteRenderer {
     this.ctx.lineWidth = 3 / (renderParameters.camera.zoom + initialZoom);
     renderParameters.camera.renderScene(this.ctx, () => {
       this.onBeforeEntities();
+      this.renderMapLogo(renderParameters.stage);
       this.renderEntities(renderParameters.entities);
       this.renderEffects(renderParameters);
       this.renderMarbles(renderParameters);
@@ -255,117 +255,30 @@ export class RouletteRenderer {
     this.ctx.closePath();
   }
 
-  private renderBrandWatermark() {
+  private renderMapLogo(stage: StageDef) {
     if (!this._brandImage) return;
 
+    // CI를 화면 배경이 아니라 맵 좌표에 직접 박아두는 방식입니다.
+    // 기본 맵 기준: 하단 큰 깔때기/구멍 근처에 1개만 작게 표시됩니다.
     const imageRatio = this._brandImage.height / this._brandImage.width;
-    const targetW = Math.min(this._canvas.width * 0.34, 520);
+    const targetW = stage.title === 'Wheel of fortune' ? 9.2 : 7.5;
     const targetH = targetW * imageRatio;
-    const x = (this._canvas.width - targetW) / 2;
-    const centerY = this._canvas.height * 0.68;
+    const centerX = stage.title === 'Wheel of fortune' ? 16 : 13;
+    const centerY = stage.title === 'Wheel of fortune' ? 102.5 : Math.max(20, stage.goalY - 10);
+    const x = centerX - targetW / 2;
     const y = centerY - targetH / 2;
 
     this.ctx.save();
-    this.ctx.globalAlpha = 0.13;
-    this.ctx.shadowBlur = 18;
-    this.ctx.shadowColor = 'rgba(141, 198, 63, 0.28)';
+    this.ctx.globalAlpha = 0.055;
+    this.ctx.shadowBlur = 0;
     this.ctx.drawImage(this._brandImage, x, y, targetW, targetH);
     this.ctx.restore();
   }
 
-  private renderWinner({ winner, winners, winnerRank, theme }: RenderParameters) {
-    if (!winner) return;
-
-    const selectedCount = Math.min(winners.length, winnerRank + 1);
-    const selected = winners.slice(0, selectedCount);
-
-    this.ctx.save();
-
-    // Dimmed background so the selected list is clearly emphasized.
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
-    this.ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-    const panelW = Math.min(this._canvas.width * 0.78, 1180);
-    const panelH = Math.min(this._canvas.height * 0.72, selectedCount > 20 ? 650 : selectedCount > 10 ? 580 : 500);
-    const panelX = (this._canvas.width - panelW) / 2;
-    const panelY = Math.max(36, (this._canvas.height - panelH) / 2);
-
-    this.drawRoundRect(panelX, panelY, panelW, panelH, 34);
-    this.ctx.fillStyle = 'rgba(8, 12, 18, 0.88)';
-    this.ctx.fill();
-    this.ctx.lineWidth = 3;
-    this.ctx.strokeStyle = 'rgba(141, 198, 63, 0.78)';
-    this.ctx.stroke();
-
-    // Small brand watermark inside the result panel.
-    if (this._brandImage) {
-      const markW = Math.min(panelW * 0.42, 420);
-      const markH = markW * (this._brandImage.height / this._brandImage.width);
-      this.ctx.save();
-      this.ctx.globalAlpha = 0.08;
-      this.ctx.drawImage(this._brandImage, panelX + panelW - markW - 34, panelY + 28, markW, markH);
-      this.ctx.restore();
-    }
-
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'alphabetic';
-    this.ctx.lineWidth = 5;
-    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.86)';
-    this.ctx.fillStyle = theme.winnerText;
-    this.ctx.font = 'bold 46px sans-serif';
-    const title = `선착순 ${selectedCount}명 선정 완료`;
-    this.ctx.strokeText(title, panelX + panelW / 2, panelY + 74);
-    this.ctx.fillText(title, panelX + panelW / 2, panelY + 74);
-
-    this.ctx.font = 'bold 22px sans-serif';
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
-    this.ctx.fillText('선정자 명단', panelX + panelW / 2, panelY + 112);
-
-    const columns = selectedCount <= 8 ? 1 : selectedCount <= 20 ? 2 : 3;
-    const rows = Math.ceil(selectedCount / columns);
-    const gapX = 18;
-    const gapY = selectedCount > 20 ? 8 : 12;
-    const listX = panelX + 44;
-    const listY = panelY + 148;
-    const listW = panelW - 88;
-    const listH = panelH - 184;
-    const cardW = (listW - gapX * (columns - 1)) / columns;
-    const cardH = Math.min(56, Math.max(34, (listH - gapY * Math.max(0, rows - 1)) / rows));
-
-    selected.forEach((marble, index) => {
-      const col = Math.floor(index / rows);
-      const row = index % rows;
-      const x = listX + col * (cardW + gapX);
-      const y = listY + row * (cardH + gapY);
-      const hueColor = `hsl(${marble.hue} 100% ${theme.marbleLightness})`;
-
-      this.drawRoundRect(x, y, cardW, cardH, 16);
-      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
-      this.ctx.fill();
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = index === selectedCount - 1 ? 'rgba(255, 230, 110, 0.95)' : 'rgba(255, 255, 255, 0.18)';
-      this.ctx.stroke();
-
-      const badgeSize = Math.min(34, cardH - 10);
-      const badgeX = x + 18 + badgeSize / 2;
-      const badgeY = y + cardH / 2;
-      this.ctx.beginPath();
-      this.ctx.arc(badgeX, badgeY, badgeSize / 2, 0, Math.PI * 2);
-      this.ctx.fillStyle = hueColor;
-      this.ctx.fill();
-
-      this.ctx.font = `bold ${Math.max(14, badgeSize * 0.48)}px sans-serif`;
-      this.ctx.textAlign = 'center';
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
-      this.ctx.fillText(String(index + 1), badgeX, badgeY + badgeSize * 0.17);
-
-      const nameX = x + 18 + badgeSize + 16;
-      this.ctx.textAlign = 'left';
-      this.ctx.fillStyle = 'white';
-      this.ctx.font = `bold ${Math.min(30, Math.max(18, cardH * 0.48))}px sans-serif`;
-      this.ctx.fillText(marble.name, nameX, y + cardH / 2 + cardH * 0.16);
-    });
-
-    this.ctx.restore();
+  private renderWinner(_params: RenderParameters) {
+    // 최종 선정자 명단은 RankRenderer에서 그립니다.
+    // 이렇게 분리해야 마우스 휠/드래그로 긴 명단을 확인할 수 있습니다.
+    return;
   }
+
 }
