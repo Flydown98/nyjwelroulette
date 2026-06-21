@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+  남양주시장애인복지관 행사용 커스텀 index.html
+  사용 방법:
+  1) 이 파일의 확장자를 .txt 에서 .html 로 바꿉니다.
+  2) GitHub 저장소의 기존 index.html 내용을 이 파일 내용으로 교체합니다.
+  3) 복지관 CI 파일은 assets/nyjwel-ci.png 이름으로 업로드하면 배경과 좌측 상단에 표시됩니다.
+  4) 기본 선정 인원은 30명입니다. 화면의 숫자칸 또는 DEFAULT_SELECTION_COUNT 값으로 변경할 수 있습니다.
+  5) 원본 Marble Roulette의 MIT License 파일은 삭제하지 마세요.
+-->
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <script defer src="https://umami.lazygyu.net/script.js"
-          data-website-id="205aee0d-30b6-4c69-a053-0c72c8377be0"></script>
-
-  <title>Marble Roulette</title>
+  <title>남양주시장애인복지관 행운 마블룰렛</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="apple-touch-icon" sizes="57x57" href="assets/apple-icon-57x57.png">
   <link rel="apple-touch-icon" sizes="60x60" href="assets/apple-icon-60x60.png">
@@ -27,16 +33,125 @@
   <meta name="msapplication-TileImage" content="assets/ms-icon-144x144.png">
   <meta name="theme-color" content="#ffffff">
 
-  <meta name="description" content="A lucky draw by dropping marbles, made by lazygyu">
-  <meta property="og:url" content="https://lazygyu.github.io/roulette/">
-  <meta property="og:title" content="Marble Roulette">
-  <meta property="og:description" content="A lucky draw by dropping marbles, made by lazygyu">
-  <meta property="og:site_name" content="lazygyu.github.io">
+  <meta name="description" content="남양주시장애인복지관 행사용 선착순 선정 마블룰렛">
+  <meta property="og:url" content="https://flydown98.github.io/nyjwelroulette/">
+  <meta property="og:title" content="남양주시장애인복지관 행운 마블룰렛">
+  <meta property="og:description" content="선착순 N명 선정 방식의 행사용 마블룰렛">
+  <meta property="og:site_name" content="Flydown98.github.io">
   <meta property="og:type" content="website">
 
   <link rel='stylesheet' href='assets/style.scss' />
+
+  <style>
+    /* 남양주시장애인복지관 행사 전용 커스텀 영역
+       CI 파일을 assets/nyjwel-ci.png 이름으로 업로드하면 자동으로 배경 워터마크가 표시됩니다. */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("assets/nyjwel-ci.png");
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: min(58vw, 760px) auto;
+      opacity: 0.10;
+      pointer-events: none;
+      z-index: 998;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
+      pointer-events: none;
+      z-index: 997;
+    }
+
+    .nyjwel-brand {
+      position: fixed;
+      top: 24px;
+      left: 28px;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      color: #222;
+      font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      backdrop-filter: blur(8px);
+    }
+
+    .nyjwel-brand .logo-mark {
+      width: 54px;
+      height: 54px;
+      background-image: url("assets/nyjwel-ci.png");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 12px;
+    }
+
+    .nyjwel-brand strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+
+    .nyjwel-brand span {
+      display: block;
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #5f3bb5;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    #settings {
+      z-index: 10001;
+    }
+
+    #notice {
+      z-index: 10002;
+    }
+
+    #notice h1,
+    #notice h2,
+    #notice p,
+    #settings h3,
+    #settings label,
+    #settings button,
+    #settings textarea,
+    #settings input,
+    #settings select {
+      font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+    }
+
+    #in_winningRank {
+      min-width: 72px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .copyright {
+      z-index: 10000;
+      font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+    }
+  </style>
 </head>
 <body>
+<div class="nyjwel-brand" aria-label="남양주시장애인복지관 행운 마블룰렛">
+  <div class="logo-mark" aria-hidden="true"></div>
+  <div>
+    <strong>남양주시장애인복지관</strong>
+    <span>선착순 선정 마블룰렛</span>
+  </div>
+</div>
 <script type="module" src="./src/index.ts"></script>
 <script type="text/javascript">
   window.dataLayer = window.dataLayer || [];
@@ -81,6 +196,10 @@
         const total = window.roulette.getCount();
         setWinnerRank(total);
         break;
+      case 'custom':
+        const selectedCount = parseInt(document.querySelector('#in_winningRank').value, 10) || DEFAULT_SELECTION_COUNT;
+        setWinnerRank(selectedCount);
+        break;
     }
   }
 
@@ -105,8 +224,9 @@
   }
 
 
+  const DEFAULT_SELECTION_COUNT = 30;
   let ready = false;
-  let winnerType = 'first';
+  let winnerType = 'custom';
 
   document.addEventListener('DOMContentLoaded', () => {
     initialize();
@@ -172,25 +292,10 @@
 
     document.querySelector('#btnStart').addEventListener('click', () => {
       if (!ready) return;
-      gtag && gtag('event', 'start', {
-        'event_category': 'roulette',
-        'event_label': 'start',
-        'value': window.roulette.getCount(),
-      });
-      const names = getNames();
-      const marbles = names.map(n => {
-        const p = parseName(n);
-        return { name: p.name, count: p.count };
-      });
-      if (typeof umami !== 'undefined') {
-        umami.track('start', { count: window.roulette.getCount() });
-        marbles.forEach(m => {
-          umami.track('marble', { name: m.name, count: m.count });
-        });
-      }
+      // 행사 참가자 명단은 외부 분석 도구로 보내지 않도록 추적 코드를 제거했습니다.
       window.roulette.start();
       document.querySelector('#settings').classList.add('hide');
-      document.querySelector('#donate').classList.add('hide');
+      document.querySelector('#donate')?.classList.add('hide');
     });
 
     document.querySelector('#chkAutoRecording').addEventListener('change', (e) => {
@@ -229,7 +334,7 @@
       ready = false;
       setTimeout(() => {
         document.querySelector('#settings').classList.remove('hide');
-        document.querySelector('#donate').classList.remove('hide');
+        document.querySelector('#donate')?.classList.remove('hide');
       }, 3000);
     });
 
@@ -245,6 +350,9 @@
         collapsible.classList.contains('collapsed') ? '▲' : '▼';
     });
 
+    // 기본값: 선착순 30명 선정. 필요하면 화면의 숫자칸에서 직접 바꾸면 됩니다.
+    winnerType = 'custom';
+    setWinnerRank(DEFAULT_SELECTION_COUNT);
     document.querySelector('#btnShuffle').click();
 
     const maps = window.roulette.getMaps();
@@ -325,14 +433,14 @@
 <div id="settings" class="settings">
   <div class="right">
     <button id="btnToggleSettings" class="btn-toggle-settings">
-      <span data-trans>Settings</span>
+      <span>설정</span>
       <i class="toggle-arrow">▲</i>
     </button>
     <div class="collapsible-rows collapsed">
       <div class="row">
         <label for='sltMap'>
           <i class="icon map"></i>
-          <span data-trans>Map</span>
+          <span>맵 선택</span>
         </label>
         <select id="sltMap"></select>
       </div>
@@ -340,14 +448,14 @@
         <div class='toggle-item'>
           <label for='chkAutoRecording'>
             <i class="icon record"></i>
-            <span data-trans>Recording</span>
+            <span>녹화</span>
           </label>
           <input type="checkbox" id="chkAutoRecording" />
         </div>
         <div class='toggle-item'>
           <label for='chkSkill'>
             <i class="icon bomb"></i>
-            <span data-trans>Using skills</span>
+            <span>효과 사용</span>
           </label>
           <input type="checkbox" id="chkSkill" checked />
         </div>
@@ -355,12 +463,12 @@
       <div class="row">
         <label>
           <i class="icon trophy"></i>
-          <span data-trans>The winner is</span>
+          <span>선정 인원</span>
         </label>
         <div class="btn-group">
-          <button class="btn-winner btn-first-winner active" data-trans>First</button>
-          <button class="btn-winner btn-last-winner" data-trans>Last</button>
-          <input type="number" id="in_winningRank" value="1" min="1" />
+          <button class="btn-winner btn-first-winner">1명</button>
+          <button class="btn-winner btn-last-winner">전체</button>
+          <input type="number" id="in_winningRank" value="30" min="1" />
         </div>
       </div>
       <div class="row row-theme">
@@ -373,44 +481,45 @@
     </div>
   </div>
   <div class="left">
-    <h3 data-trans>Enter names below</h3>
-    <textarea id="in_names" placeholder="Input names separated by commas or line feed here" data-trans="placeholder">수박*2,키위*2,귤*2</textarea>
+    <h3>참여자 명단 입력</h3>
+    <textarea id="in_names" placeholder="한 줄에 한 명씩 입력하세요. 예: 홍길동&#10;김철수&#10;이영희">홍길동
+김철수
+이영희</textarea>
     <div class="actions">
       <button id="btnNotice">
         <i class="icon megaphone"></i>
       </button>
-      <a href='https://marblerouletteshop.com' target='_blank' id="btnShop" class='btn new' title='MarbleRoulette Shop'>
-        <img src='assets/images/marblerouletteshop.png' />
-      </a>
       <div class="sep"></div>
       <button id="btnShuffle">
         <i class="icon shuffle"></i>
-        <span data-trans>Shuffle</span>
+        <span>명단 섞기</span>
       </button>
       <button id="btnStart">
         <i class="icon play"></i>
-        <span data-trans>Start</span>
+        <span>추첨 시작</span>
       </button>
     </div>
   </div>
 </div>
 <div id="notice">
-  <h1>Notice</h1>
+  <h1>행운 마블룰렛 안내</h1>
   <div class="notice-body">
-    <h2>50% 할인 행사</h2>
-    <a href='https://marblerouletteshop.com/news/1'>
-      <img style='width:100%;' src='/assets/sale.jpg' />
-    </a>
+    <h2>선착순 선정 방식</h2>
     <p>
-      저작권 등록을 기념하여 전 상품 50% 할인 행사를 진행합니다.<br />
-      감사합니다!
+      이 룰렛은 1등, 꼴등을 가리는 방식이 아니라<br />
+      구슬이 도착한 순서대로 정해진 인원까지 선정하는 방식입니다.<br /><br />
+      기본값은 <strong>선착순 30명</strong>입니다.<br />
+      인원을 바꾸고 싶으면 오른쪽 설정의 숫자칸을 수정해 주세요.<br /><br />
+      참여자 명단은 행사 진행용으로만 사용하며, 코드에 저장하지 않는 것을 권장합니다.
     </p>
   </div>
   <div class="notice-action">
-    <button id="closeNotice" data-trans>Close</button>
+    <button id="closeNotice">닫기</button>
   </div>
 </div>
-<div class="copyright">&copy; 2022-2026.<a href="https://lazygyu.net" target="_blank">lazygyu</a> <span data-trans>This program is freeware and may be used freely anywhere, including in broadcasts and videos.</span>
+<div class="copyright">
+  Based on Marble Roulette by <a href="https://lazygyu.net" target="_blank">lazygyu</a> · MIT License<br />
+  남양주시장애인복지관 행사 진행용 커스텀 화면
 </div>
 </body>
 </html>
