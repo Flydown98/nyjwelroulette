@@ -1,7 +1,7 @@
 class Options {
   useSkills: boolean = true;
-  winningRank: number = 0;
-  autoRecording: boolean = true;
+  winningRank: number = 29;
+  autoRecording: boolean = false;
 }
 
 const options = new Options();

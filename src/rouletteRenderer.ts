@@ -30,6 +30,7 @@ export class RouletteRenderer {
   public sizeFactor = 1;
 
   protected _images: { [key: string]: HTMLImageElement } = {};
+  protected _brandImage?: HTMLImageElement;
   protected _theme: ColorTheme = Themes.dark;
   protected _keywordService: KeywordService;
 
@@ -94,6 +95,19 @@ export class RouletteRenderer {
     });
   }
 
+  private async _loadOptionalImage(url: string): Promise<HTMLImageElement | undefined> {
+    return new Promise((rs) => {
+      const img = new Image();
+      img.addEventListener('load', () => {
+        rs(img);
+      });
+      img.addEventListener('error', () => {
+        rs(undefined);
+      });
+      img.src = url;
+    });
+  }
+
   private async _load(): Promise<void> {
     const loadPromises = [
       { name: '챔루', imgUrl: new URL('../assets/images/chamru.png', import.meta.url) },
@@ -112,6 +126,12 @@ export class RouletteRenderer {
     loadPromises.push(
       (async () => {
         await this._loadImage(new URL('../assets/images/ff.svg', import.meta.url).toString());
+      })()
+    );
+
+    loadPromises.push(
+      (async () => {
+        this._brandImage = await this._loadOptionalImage(new URL('../assets/nyjwel-ci.png', import.meta.url).toString());
       })()
     );
 
@@ -134,6 +154,7 @@ export class RouletteRenderer {
     this._theme = renderParameters.theme;
     this.ctx.fillStyle = this._theme.background;
     this.ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+    this.renderBrandWatermark();
 
     this.ctx.save();
     this.ctx.scale(initialZoom, initialZoom);
@@ -219,51 +240,132 @@ export class RouletteRenderer {
     });
   }
 
-  private renderWinner({ winner, theme }: RenderParameters) {
-    if (!winner) return;
+  private drawRoundRect(x: number, y: number, w: number, h: number, r: number) {
+    const radius = Math.min(r, w / 2, h / 2);
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + radius, y);
+    this.ctx.lineTo(x + w - radius, y);
+    this.ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    this.ctx.lineTo(x + w, y + h - radius);
+    this.ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    this.ctx.lineTo(x + radius, y + h);
+    this.ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    this.ctx.lineTo(x, y + radius);
+    this.ctx.quadraticCurveTo(x, y, x + radius, y);
+    this.ctx.closePath();
+  }
+
+  private renderBrandWatermark() {
+    if (!this._brandImage) return;
+
+    const imageRatio = this._brandImage.height / this._brandImage.width;
+    const targetW = Math.min(this._canvas.width * 0.34, 520);
+    const targetH = targetW * imageRatio;
+    const x = (this._canvas.width - targetW) / 2;
+    const centerY = this._canvas.height * 0.68;
+    const y = centerY - targetH / 2;
+
     this.ctx.save();
-    this.ctx.fillStyle = theme.winnerBackground;
-    this.ctx.fillRect(this._canvas.width / 2, this._canvas.height - 168, this._canvas.width / 2, 168);
+    this.ctx.globalAlpha = 0.13;
+    this.ctx.shadowBlur = 18;
+    this.ctx.shadowColor = 'rgba(141, 198, 63, 0.28)';
+    this.ctx.drawImage(this._brandImage, x, y, targetW, targetH);
+    this.ctx.restore();
+  }
 
-    // Draw marble image or colored circle
-    const marbleSize = 100;
-    const marbleCenterX = this._canvas.width - marbleSize / 2 - 20;
-    const marbleCenterY = this._canvas.height - 168 / 2;
-    const marbleImage = this.getMarbleImage(winner.name);
+  private renderWinner({ winner, winners, winnerRank, theme }: RenderParameters) {
+    if (!winner) return;
 
-    if (marbleImage) {
-      this.ctx.drawImage(
-        marbleImage,
-        marbleCenterX - marbleSize / 2,
-        marbleCenterY - marbleSize / 2,
-        marbleSize,
-        marbleSize
-      );
-    } else {
-      this.ctx.beginPath();
-      this.ctx.arc(marbleCenterX, marbleCenterY, marbleSize / 2, 0, Math.PI * 2);
-      this.ctx.fillStyle = `hsl(${winner.hue} 100% ${theme.marbleLightness})`;
-      this.ctx.fill();
+    const selectedCount = Math.min(winners.length, winnerRank + 1);
+    const selected = winners.slice(0, selectedCount);
+
+    this.ctx.save();
+
+    // Dimmed background so the selected list is clearly emphasized.
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+    this.ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+    const panelW = Math.min(this._canvas.width * 0.78, 1180);
+    const panelH = Math.min(this._canvas.height * 0.72, selectedCount > 20 ? 650 : selectedCount > 10 ? 580 : 500);
+    const panelX = (this._canvas.width - panelW) / 2;
+    const panelY = Math.max(36, (this._canvas.height - panelH) / 2);
+
+    this.drawRoundRect(panelX, panelY, panelW, panelH, 34);
+    this.ctx.fillStyle = 'rgba(8, 12, 18, 0.88)';
+    this.ctx.fill();
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = 'rgba(141, 198, 63, 0.78)';
+    this.ctx.stroke();
+
+    // Small brand watermark inside the result panel.
+    if (this._brandImage) {
+      const markW = Math.min(panelW * 0.42, 420);
+      const markH = markW * (this._brandImage.height / this._brandImage.width);
+      this.ctx.save();
+      this.ctx.globalAlpha = 0.08;
+      this.ctx.drawImage(this._brandImage, panelX + panelW - markW - 34, panelY + 28, markW, markH);
+      this.ctx.restore();
     }
 
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'alphabetic';
+    this.ctx.lineWidth = 5;
+    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.86)';
     this.ctx.fillStyle = theme.winnerText;
-    this.ctx.strokeStyle = theme.winnerOutline;
+    this.ctx.font = 'bold 46px sans-serif';
+    const title = `선착순 ${selectedCount}명 선정 완료`;
+    this.ctx.strokeText(title, panelX + panelW / 2, panelY + 74);
+    this.ctx.fillText(title, panelX + panelW / 2, panelY + 74);
 
-    this.ctx.font = 'bold 48px sans-serif';
-    this.ctx.textAlign = 'right';
-    this.ctx.lineWidth = 4;
-    const textRightX = marbleCenterX - marbleSize / 2 - 20;
-    if (theme.winnerOutline) {
-      this.ctx.strokeText('Winner', textRightX, this._canvas.height - 120);
-    }
+    this.ctx.font = 'bold 22px sans-serif';
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+    this.ctx.fillText('선정자 명단', panelX + panelW / 2, panelY + 112);
 
-    this.ctx.fillText('Winner', textRightX, this._canvas.height - 120);
-    this.ctx.font = 'bold 72px sans-serif';
-    this.ctx.fillStyle = `hsl(${winner.hue} 100% ${theme.marbleLightness})`;
-    if (theme.winnerOutline) {
-      this.ctx.strokeText(winner.name, textRightX, this._canvas.height - 55);
-    }
-    this.ctx.fillText(winner.name, textRightX, this._canvas.height - 55);
+    const columns = selectedCount <= 8 ? 1 : selectedCount <= 20 ? 2 : 3;
+    const rows = Math.ceil(selectedCount / columns);
+    const gapX = 18;
+    const gapY = selectedCount > 20 ? 8 : 12;
+    const listX = panelX + 44;
+    const listY = panelY + 148;
+    const listW = panelW - 88;
+    const listH = panelH - 184;
+    const cardW = (listW - gapX * (columns - 1)) / columns;
+    const cardH = Math.min(56, Math.max(34, (listH - gapY * Math.max(0, rows - 1)) / rows));
+
+    selected.forEach((marble, index) => {
+      const col = Math.floor(index / rows);
+      const row = index % rows;
+      const x = listX + col * (cardW + gapX);
+      const y = listY + row * (cardH + gapY);
+      const hueColor = `hsl(${marble.hue} 100% ${theme.marbleLightness})`;
+
+      this.drawRoundRect(x, y, cardW, cardH, 16);
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
+      this.ctx.fill();
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = index === selectedCount - 1 ? 'rgba(255, 230, 110, 0.95)' : 'rgba(255, 255, 255, 0.18)';
+      this.ctx.stroke();
+
+      const badgeSize = Math.min(34, cardH - 10);
+      const badgeX = x + 18 + badgeSize / 2;
+      const badgeY = y + cardH / 2;
+      this.ctx.beginPath();
+      this.ctx.arc(badgeX, badgeY, badgeSize / 2, 0, Math.PI * 2);
+      this.ctx.fillStyle = hueColor;
+      this.ctx.fill();
+
+      this.ctx.font = `bold ${Math.max(14, badgeSize * 0.48)}px sans-serif`;
+      this.ctx.textAlign = 'center';
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
+      this.ctx.fillText(String(index + 1), badgeX, badgeY + badgeSize * 0.17);
+
+      const nameX = x + 18 + badgeSize + 16;
+      this.ctx.textAlign = 'left';
+      this.ctx.fillStyle = 'white';
+      this.ctx.font = `bold ${Math.min(30, Math.max(18, cardH * 0.48))}px sans-serif`;
+      this.ctx.fillText(marble.name, nameX, y + cardH / 2 + cardH * 0.16);
+    });
+
     this.ctx.restore();
   }
 }

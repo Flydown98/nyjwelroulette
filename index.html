@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <!--
   남양주시장애인복지관 행사용 커스텀 index.html
-  사용 방법:
-  1) 이 파일의 확장자를 .txt 에서 .html 로 바꿉니다.
-  2) GitHub 저장소의 기존 index.html 내용을 이 파일 내용으로 교체합니다.
-  3) 복지관 CI 파일은 assets/nyjwel-ci.png 이름으로 업로드하면 배경과 좌측 상단에 표시됩니다.
-  4) 기본 선정 인원은 30명입니다. 화면의 숫자칸 또는 DEFAULT_SELECTION_COUNT 값으로 변경할 수 있습니다.
-  5) 원본 Marble Roulette의 MIT License 파일은 삭제하지 마세요.
+  - 원본 Marble Roulette 기반 / MIT License 유지
+  - 복지관 CI 파일은 assets/nyjwel-ci.png 이름으로 올리면 게임 화면 하단 중앙에 워터마크로 표시됩니다.
+  - 기본 선정 인원은 30명이며, 화면에서 10명 등 원하는 인원으로 바꿀 수 있습니다.
 -->
 <html lang="ko">
 <head>
@@ -28,143 +25,150 @@
   <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
   <link rel="manifest" href="assets/manifest.json">
-
   <meta name="msapplication-TileColor" content="#ffffff">
   <meta name="msapplication-TileImage" content="assets/ms-icon-144x144.png">
-  <meta name="theme-color" content="#ffffff">
-
+  <meta name="theme-color" content="#111111">
   <meta name="description" content="남양주시장애인복지관 행사용 선착순 선정 마블룰렛">
   <meta property="og:url" content="https://flydown98.github.io/nyjwelroulette/">
   <meta property="og:title" content="남양주시장애인복지관 행운 마블룰렛">
   <meta property="og:description" content="선착순 N명 선정 방식의 행사용 마블룰렛">
   <meta property="og:site_name" content="Flydown98.github.io">
   <meta property="og:type" content="website">
-
-  <link rel='stylesheet' href='assets/style.scss' />
+  <link rel="stylesheet" href="assets/style.scss" />
 
   <style>
-    /* 남양주시장애인복지관 행사 전용 커스텀 영역
-       CI 파일을 assets/nyjwel-ci.png 이름으로 업로드하면 자동으로 배경 워터마크가 표시됩니다. */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image: url("assets/nyjwel-ci.png");
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: min(58vw, 760px) auto;
-      opacity: 0.10;
-      pointer-events: none;
-      z-index: 998;
+    :root {
+      --nyjwel-panel: rgba(18, 22, 25, 0.82);
+      --nyjwel-line: rgba(255, 255, 255, 0.18);
+      --nyjwel-green: #8dc63f;
+      --nyjwel-purple: #7b4fc4;
     }
 
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at center, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
-      pointer-events: none;
-      z-index: 997;
+    body {
+      font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
     }
 
     .nyjwel-brand {
       position: fixed;
-      top: 24px;
-      left: 28px;
+      top: 20px;
+      left: 22px;
       z-index: 10000;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 13px 18px;
+      gap: 12px;
+      padding: 12px 18px;
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.88);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
       color: #222;
-      font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
       backdrop-filter: blur(8px);
     }
 
-    .nyjwel-brand .logo-mark {
-      width: 54px;
-      height: 54px;
-      background-image: url("assets/nyjwel-ci.png");
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
-      border-radius: 12px;
+    .nyjwel-brand .anniv {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--nyjwel-green), var(--nyjwel-purple));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: -0.06em;
     }
 
     .nyjwel-brand strong {
       display: block;
       font-size: 18px;
       line-height: 1.15;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.05em;
       white-space: nowrap;
     }
 
     .nyjwel-brand span {
       display: block;
       margin-top: 4px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #5f3bb5;
-      letter-spacing: -0.03em;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--nyjwel-purple);
+      letter-spacing: -0.04em;
       white-space: nowrap;
     }
 
     #settings {
       z-index: 10001;
+      background: rgba(74, 82, 86, 0.92);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(8px);
     }
 
-    #notice {
-      z-index: 10002;
-    }
-
-    #notice h1,
-    #notice h2,
-    #notice p,
     #settings h3,
     #settings label,
     #settings button,
     #settings textarea,
     #settings input,
-    #settings select {
+    #settings select,
+    #selectionHint {
       font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
     }
 
+    #settings h3 {
+      margin-bottom: 4px;
+    }
+
+    .selection-help {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.84);
+      letter-spacing: -0.03em;
+    }
+
     #in_winningRank {
-      min-width: 72px;
+      min-width: 82px;
       text-align: center;
-      font-weight: 800;
+      font-weight: 900;
+    }
+
+    .btn-winner.btn-first-winner,
+    .btn-winner.btn-last-winner {
+      display: none;
+    }
+
+    #btnShop,
+    #btnNotice,
+    #notice {
+      display: none !important;
     }
 
     .copyright {
       z-index: 10000;
       font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      opacity: 0.74;
     }
   </style>
 </head>
 <body>
 <div class="nyjwel-brand" aria-label="남양주시장애인복지관 행운 마블룰렛">
-  <div class="logo-mark" aria-hidden="true"></div>
+  <div class="anniv" aria-hidden="true">20</div>
   <div>
     <strong>남양주시장애인복지관</strong>
     <span>선착순 선정 마블룰렛</span>
   </div>
 </div>
+
 <script type="module" src="./src/index.ts"></script>
 <script type="text/javascript">
-  window.dataLayer = window.dataLayer || [];
+  const DEFAULT_SELECTION_COUNT = 30;
+  let ready = false;
+  let desiredSelectionCount = DEFAULT_SELECTION_COUNT;
 
-  function gtag() {
-    dataLayer.push(arguments);
+  function $(selector) {
+    return document.querySelector(selector);
   }
 
-  gtag('js', new Date());
-  gtag('config', 'G-5899C1DJM0');
-
   function getNames() {
-    const value = document.querySelector('#in_names').value.trim();
+    const value = $('#in_names').value.trim();
     return value.split(/[,\r\n]/g).map(v => v.trim()).filter(v => !!v);
   }
 
@@ -174,13 +178,25 @@
     const hasWeight = weightRegex.test(nameStr);
     const hasCount = countRegex.test(nameStr);
     const name = /^\s*([^\/*]+)?/.exec(nameStr)[1];
-    const weight = hasWeight ? parseInt(weightRegex.exec(nameStr)[1].replace('/', '')) : 1;
-    const count = hasCount ? parseInt(countRegex.exec(nameStr)[1].replace('*', '')) : 1;
-    return {
-      name,
-      weight,
-      count,
-    };
+    const weight = hasWeight ? parseInt(weightRegex.exec(nameStr)[1].replace('/', ''), 10) : 1;
+    const count = hasCount ? parseInt(countRegex.exec(nameStr)[1].replace('*', ''), 10) : 1;
+    return { name, weight, count };
+  }
+
+  function setSelectionCount() {
+    const total = window.roulette.getCount();
+    const effectiveCount = total > 0 ? Math.min(desiredSelectionCount, total) : desiredSelectionCount;
+    window.options.winningRank = Math.max(0, effectiveCount - 1);
+    window.roulette.setWinningRank(window.options.winningRank);
+
+    const hint = $('#selectionHint');
+    if (hint) {
+      if (total > 0) {
+        hint.textContent = `총 ${total}명 중 선착순 ${effectiveCount}명 선정`;
+      } else {
+        hint.textContent = `참여자 명단을 입력한 뒤 선정 인원을 정해주세요.`;
+      }
+    }
   }
 
   function getReady() {
@@ -188,45 +204,8 @@
     window.roulette.setMarbles(names);
     ready = names.length > 0;
     localStorage.setItem('mbr_names', names.join(','));
-    switch (winnerType) {
-      case 'first':
-        setWinnerRank(1);
-        break;
-      case 'last':
-        const total = window.roulette.getCount();
-        setWinnerRank(total);
-        break;
-      case 'custom':
-        const selectedCount = parseInt(document.querySelector('#in_winningRank').value, 10) || DEFAULT_SELECTION_COUNT;
-        setWinnerRank(selectedCount);
-        break;
-    }
+    setSelectionCount();
   }
-
-  function setWinnerRank(rank) {
-    document.querySelector('#in_winningRank').value = rank;
-    window.options.winningRank = rank - 1;
-    window.roulette.setWinningRank(window.options.winningRank);
-
-    if (winnerType === 'first') {
-      document.querySelector('.btn-first-winner').classList.toggle('active', true);
-      document.querySelector('.btn-last-winner').classList.toggle('active', false);
-      document.querySelector('#in_winningRank').classList.toggle('active', false);
-    } else if (winnerType === 'last') {
-      document.querySelector('.btn-first-winner').classList.toggle('active', false);
-      document.querySelector('.btn-last-winner').classList.toggle('active', true);
-      document.querySelector('#in_winningRank').classList.toggle('active', false);
-    } else if (winnerType === 'custom') {
-      document.querySelector('.btn-first-winner').classList.toggle('active', false);
-      document.querySelector('.btn-last-winner').classList.toggle('active', false);
-      document.querySelector('#in_winningRank').classList.toggle('active', true);
-    }
-  }
-
-
-  const DEFAULT_SELECTION_COUNT = 30;
-  let ready = false;
-  let winnerType = 'custom';
 
   document.addEventListener('DOMContentLoaded', () => {
     initialize();
@@ -234,28 +213,32 @@
 
   function initialize() {
     if (!window.roulette || !window.roulette.isReady) {
-      console.log('does not loaded yet');
       setTimeout(initialize, 100);
       return;
     }
-    console.log('initializing start');
+
+    window.options.autoRecording = false;
+    window.roulette.setAutoRecording(false);
 
     const urlParams = new URLSearchParams(window.location.search);
     const namesFromUrl = urlParams.get('names');
 
     if (namesFromUrl) {
-      document.querySelector('#in_names').value = namesFromUrl.replace(/,/g, '\n');
+      $('#in_names').value = namesFromUrl.replace(/,/g, '\n');
     } else {
       const savedNames = localStorage.getItem('mbr_names');
       if (savedNames) {
-        document.querySelector('#in_names').value = savedNames;
+        $('#in_names').value = savedNames;
       }
     }
-    document.querySelector('#in_names').addEventListener('input', () => {
+
+    desiredSelectionCount = parseInt($('#in_winningRank').value, 10) || DEFAULT_SELECTION_COUNT;
+
+    $('#in_names').addEventListener('input', () => {
       getReady();
     });
 
-    document.querySelector('#in_names').addEventListener('blur', () => {
+    $('#in_names').addEventListener('blur', () => {
       const nameSource = getNames();
       const nameSet = new Set();
       const nameCounts = {};
@@ -277,86 +260,69 @@
         }
       });
 
-      const oldValue = document.querySelector('#in_names').value;
+      const oldValue = $('#in_names').value;
       const newValue = result.join(',');
 
       if (oldValue !== newValue) {
-        document.querySelector('#in_names').value = newValue;
-        getReady();
+        $('#in_names').value = newValue;
       }
-    });
-
-    document.querySelector('#btnShuffle').addEventListener('click', () => {
       getReady();
     });
 
-    document.querySelector('#btnStart').addEventListener('click', () => {
-      if (!ready) return;
-      // 행사 참가자 명단은 외부 분석 도구로 보내지 않도록 추적 코드를 제거했습니다.
-      window.roulette.start();
-      document.querySelector('#settings').classList.add('hide');
-      document.querySelector('#donate')?.classList.add('hide');
+    $('#in_winningRank').addEventListener('input', (e) => {
+      const value = parseInt(e.target.value, 10);
+      desiredSelectionCount = Number.isFinite(value) && value > 0 ? value : DEFAULT_SELECTION_COUNT;
+      setSelectionCount();
     });
 
-    document.querySelector('#chkAutoRecording').addEventListener('change', (e) => {
+    $('#btnShuffle').addEventListener('click', () => {
+      getReady();
+    });
+
+    $('#btnStart').addEventListener('click', () => {
+      getReady();
+      if (!ready) return;
+      window.roulette.start();
+      $('#settings')?.classList.add('hide');
+    });
+
+    $('#chkAutoRecording').addEventListener('change', (e) => {
       window.options.autoRecording = e.target.matches(':checked');
       window.roulette.setAutoRecording(window.options.autoRecording);
     });
 
-    document.querySelector('#chkSkill').addEventListener('change', (e) => {
+    $('#chkSkill').addEventListener('change', (e) => {
       window.options.useSkills = e.target.matches(':checked');
       window.roulette.setWinningRank(window.options.winningRank);
     });
 
-    document.querySelector('#chkDarkMode').addEventListener('change', (e) => {
+    $('#chkDarkMode').addEventListener('change', (e) => {
       window.options.darkMode = e.target.matches(':checked');
       window.roulette.setTheme(window.options.darkMode ? 'dark' : 'light');
       document.documentElement.classList.toggle('light', !window.options.darkMode);
     });
 
-    document.querySelector('#in_winningRank').addEventListener('change', (e) => {
-      const v = parseInt(e.target.value, 10);
-      winnerType = 'custom';
-      setWinnerRank(isNaN(v) ? 0 : v);
-    });
-
-    document.querySelector('.btn-last-winner').addEventListener('click', () => {
-      const total = window.roulette.getCount();
-      winnerType = 'last';
-      setWinnerRank(total);
-    });
-    document.querySelector('.btn-first-winner').addEventListener('click', () => {
-      winnerType = 'first';
-      setWinnerRank(1);
-    });
-
     window.roulette.addEventListener('goal', () => {
       ready = false;
       setTimeout(() => {
-        document.querySelector('#settings').classList.remove('hide');
-        document.querySelector('#donate')?.classList.remove('hide');
-      }, 3000);
+        $('#settings')?.classList.remove('hide');
+      }, 8000);
     });
 
     window.roulette.addEventListener('message', (e) => {
       simpleToast(e.detail);
     });
 
-    const toggleBtn = document.querySelector('#btnToggleSettings');
-    const collapsible = document.querySelector('.collapsible-rows');
+    const toggleBtn = $('#btnToggleSettings');
+    const collapsible = $('.collapsible-rows');
     toggleBtn.addEventListener('click', () => {
       collapsible.classList.toggle('collapsed');
       toggleBtn.querySelector('.toggle-arrow').textContent =
         collapsible.classList.contains('collapsed') ? '▲' : '▼';
     });
 
-    // 기본값: 선착순 30명 선정. 필요하면 화면의 숫자칸에서 직접 바꾸면 됩니다.
-    winnerType = 'custom';
-    setWinnerRank(DEFAULT_SELECTION_COUNT);
-    document.querySelector('#btnShuffle').click();
-
     const maps = window.roulette.getMaps();
-    const mapSelector = document.querySelector('#sltMap');
+    const mapSelector = $('#sltMap');
     maps.forEach((map) => {
       const option = document.createElement('option');
       option.value = map.index;
@@ -368,92 +334,50 @@
     mapSelector.addEventListener('change', (e) => {
       const index = e.target.value;
       window.roulette.setMap(index);
+      getReady();
     });
 
-    // const checkDonateButtonLoaded = () => {
-    //   const btn = document.querySelector('span.bmc-btn-text');
-    //   if (!btn) {
-    //     setTimeout(checkDonateButtonLoaded, 100);
-    //   } else {
-    //     console.log('donation button has been loaded');
-    //     btn.setAttribute('data-trans', '');
-    //     window.translateElement(btn);
-    //   }
-    // };
-    // setTimeout(checkDonateButtonLoaded, 100);
+    getReady();
+  }
 
-    const currentNotice = 6;
-    const noticeKey = 'lastViewedNotification';
-
-    const closeNotice = () => {
-      document.querySelector('#notice').style.display = 'none';
-      localStorage.setItem(noticeKey, currentNotice.toString());
-    };
-
-    const openNotice = () => {
-      console.log('openNotice');
-      document.querySelector('#notice').style.display = 'flex';
-    };
-
-    document.querySelector('#closeNotice').addEventListener('click', () => {
-      closeNotice();
-    });
-
-    document.querySelector('#btnNotice').addEventListener('click', () => {
-      openNotice();
-    });
-
-    function simpleToast(msg) {
-      const toast = document.createElement('div');
-      toast.classList.add('toast');
-      toast.innerHTML = msg;
-
-      if (window.translateElement) {
-        console.log('try to translate');
-        window.translateElement(toast);
-      }
-
-      document.body.appendChild(toast);
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 1200);
+  function simpleToast(msg) {
+    const toast = document.createElement('div');
+    toast.classList.add('toast');
+    toast.innerHTML = msg;
+    if (window.translateElement) {
+      window.translateElement(toast);
     }
-
-    const checkNotice = () => {
-      const lastViewed = localStorage.getItem(noticeKey);
-      console.log('lastViewed', lastViewed);
-      if (lastViewed === null || Number(lastViewed) < currentNotice) {
-        openNotice();
-      }
-    };
-
-    checkNotice();
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 1200);
   }
 </script>
+
 <div id="settings" class="settings">
   <div class="right">
     <button id="btnToggleSettings" class="btn-toggle-settings">
-      <span>설정</span>
+      <span>설정 접기/펼치기</span>
       <i class="toggle-arrow">▲</i>
     </button>
     <div class="collapsible-rows collapsed">
       <div class="row">
-        <label for='sltMap'>
+        <label for="sltMap">
           <i class="icon map"></i>
           <span>맵 선택</span>
         </label>
         <select id="sltMap"></select>
       </div>
       <div class="row row-toggles">
-        <div class='toggle-item'>
-          <label for='chkAutoRecording'>
+        <div class="toggle-item">
+          <label for="chkAutoRecording">
             <i class="icon record"></i>
             <span>녹화</span>
           </label>
           <input type="checkbox" id="chkAutoRecording" />
         </div>
-        <div class='toggle-item'>
-          <label for='chkSkill'>
+        <div class="toggle-item">
+          <label for="chkSkill">
             <i class="icon bomb"></i>
             <span>효과 사용</span>
           </label>
@@ -466,60 +390,43 @@
           <span>선정 인원</span>
         </label>
         <div class="btn-group">
-          <button class="btn-winner btn-first-winner">1명</button>
-          <button class="btn-winner btn-last-winner">전체</button>
+          <button class="btn-winner btn-first-winner active" type="button">First</button>
+          <button class="btn-winner btn-last-winner" type="button">Last</button>
           <input type="number" id="in_winningRank" value="30" min="1" />
         </div>
       </div>
       <div class="row row-theme">
-        <div class='theme'>
-          <i class='icon sun'></i>
-          <input type='checkbox' id='chkDarkMode' checked />
-          <i class='icon moon'></i>
+        <div class="theme">
+          <i class="icon sun"></i>
+          <input type="checkbox" id="chkDarkMode" checked />
+          <i class="icon moon"></i>
         </div>
       </div>
     </div>
   </div>
   <div class="left">
     <h3>참여자 명단 입력</h3>
-    <textarea id="in_names" placeholder="한 줄에 한 명씩 입력하세요. 예: 홍길동&#10;김철수&#10;이영희">홍길동
-김철수
-이영희</textarea>
+    <textarea id="in_names" placeholder="이름을 쉼표 또는 엔터로 구분해서 입력하세요">수박*2,키위*2,귤*2,나무*3,정해찬*4</textarea>
+    <div id="selectionHint" class="selection-help">총 0명 중 선착순 30명 선정</div>
     <div class="actions">
-      <button id="btnNotice">
+      <button id="btnNotice" type="button">
         <i class="icon megaphone"></i>
       </button>
-      <div class="sep"></div>
-      <button id="btnShuffle">
+      <button id="btnShuffle" type="button">
         <i class="icon shuffle"></i>
         <span>명단 섞기</span>
       </button>
-      <button id="btnStart">
+      <button id="btnStart" type="button">
         <i class="icon play"></i>
         <span>추첨 시작</span>
       </button>
     </div>
   </div>
 </div>
-<div id="notice">
-  <h1>행운 마블룰렛 안내</h1>
-  <div class="notice-body">
-    <h2>선착순 선정 방식</h2>
-    <p>
-      이 룰렛은 1등, 꼴등을 가리는 방식이 아니라<br />
-      구슬이 도착한 순서대로 정해진 인원까지 선정하는 방식입니다.<br /><br />
-      기본값은 <strong>선착순 30명</strong>입니다.<br />
-      인원을 바꾸고 싶으면 오른쪽 설정의 숫자칸을 수정해 주세요.<br /><br />
-      참여자 명단은 행사 진행용으로만 사용하며, 코드에 저장하지 않는 것을 권장합니다.
-    </p>
-  </div>
-  <div class="notice-action">
-    <button id="closeNotice">닫기</button>
-  </div>
-</div>
+
+<div id="notice"></div>
 <div class="copyright">
-  Based on Marble Roulette by <a href="https://lazygyu.net" target="_blank">lazygyu</a> · MIT License<br />
-  남양주시장애인복지관 행사 진행용 커스텀 화면
+  Based on Marble Roulette by <a href="https://lazygyu.net" target="_blank">lazygyu</a> · MIT License
 </div>
 </body>
 </html>
