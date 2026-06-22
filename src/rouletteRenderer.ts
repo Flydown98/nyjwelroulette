@@ -261,15 +261,15 @@ export class RouletteRenderer {
     // CI를 화면 배경이 아니라 맵 좌표에 직접 박아두는 방식입니다.
     // 기본 맵 기준: 하단 큰 깔때기/구멍 근처에 1개만 작게 표시됩니다.
     const imageRatio = this._brandImage.height / this._brandImage.width;
-    const targetW = stage.title === 'Wheel of fortune' ? 9.2 : 7.5;
+    const targetW = stage.title === 'Wheel of fortune' ? 6.8 : 6.2;
     const targetH = targetW * imageRatio;
     const centerX = stage.title === 'Wheel of fortune' ? 16 : 13;
-    const centerY = stage.title === 'Wheel of fortune' ? 102.5 : Math.max(20, stage.goalY - 10);
+    const centerY = stage.title === 'Wheel of fortune' ? 103.6 : Math.max(20, stage.goalY - 10);
     const x = centerX - targetW / 2;
     const y = centerY - targetH / 2;
 
     this.ctx.save();
-    this.ctx.globalAlpha = 0.055;
+    this.ctx.globalAlpha = 0.035;
     this.ctx.shadowBlur = 0;
     this.ctx.drawImage(this._brandImage, x, y, targetW, targetH);
     this.ctx.restore();

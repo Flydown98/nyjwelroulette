@@ -2,8 +2,9 @@
 <!--
   남양주시장애인복지관 행사용 커스텀 index.html
   - 원본 Marble Roulette 기반 / MIT License 유지
-  - 복지관 CI 파일은 assets/nyjwel-ci.png 이름으로 올리면 게임 화면 하단 중앙에 워터마크로 표시됩니다.
-  - 기본 선정 인원은 30명이며, 화면에서 10명 등 원하는 인원으로 바꿀 수 있습니다.
+  - 기본 선정 인원은 30명입니다.
+  - 선정 완료된 사람은 브라우저 localStorage에 저장되고, 다음 추첨에서 자동 제외할 수 있습니다.
+  - 복지관 CI 파일은 assets/nyjwel-ci.png 이름으로 교체하면 됩니다.
 -->
 <html lang="ko">
 <head>
@@ -108,7 +109,8 @@
     #settings textarea,
     #settings input,
     #settings select,
-    #selectionHint {
+    #selectionHint,
+    #selectionState {
       font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
     }
 
@@ -116,12 +118,17 @@
       margin-bottom: 4px;
     }
 
-    .selection-help {
+    .selection-help,
+    .selection-state {
       margin-top: 4px;
       font-size: 12px;
       font-weight: 700;
       color: rgba(255, 255, 255, 0.84);
       letter-spacing: -0.03em;
+    }
+
+    .selection-state {
+      color: rgba(255, 238, 150, 0.95);
     }
 
     #in_winningRank {
@@ -133,6 +140,43 @@
     .btn-winner.btn-first-winner,
     .btn-winner.btn-last-winner {
       display: none;
+    }
+
+    .selection-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 7px;
+      align-items: center;
+    }
+
+    .selection-tools label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.18);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .selection-tools input[type="checkbox"] {
+      width: auto !important;
+      height: auto !important;
+      padding-right: 0 !important;
+      vertical-align: middle;
+    }
+
+    .selection-tools input[type="checkbox"]::before,
+    .selection-tools input[type="checkbox"]::after {
+      display: none !important;
+    }
+
+    .selection-tools button {
+      font-size: 12px;
+      font-weight: 800;
     }
 
     #btnShop,
@@ -160,6 +204,10 @@
 <script type="module" src="./src/index.ts"></script>
 <script type="text/javascript">
   const DEFAULT_SELECTION_COUNT = 30;
+  const STORAGE_NAMES = 'mbr_names';
+  const STORAGE_SELECTED = 'nyjwel_selected_names';
+  const STORAGE_EXCLUDE = 'nyjwel_exclude_selected';
+
   let ready = false;
   let desiredSelectionCount = DEFAULT_SELECTION_COUNT;
 
@@ -167,9 +215,17 @@
     return document.querySelector(selector);
   }
 
-  function getNames() {
-    const value = $('#in_names').value.trim();
-    return value.split(/[,\r\n]/g).map(v => v.trim()).filter(v => !!v);
+  function simpleToast(msg) {
+    const toast = document.createElement('div');
+    toast.classList.add('toast');
+    toast.innerHTML = msg;
+    if (window.translateElement) {
+      window.translateElement(toast);
+    }
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 1600);
   }
 
   function parseName(nameStr) {
@@ -177,10 +233,92 @@
     const countRegex = /(\*\d+)/;
     const hasWeight = weightRegex.test(nameStr);
     const hasCount = countRegex.test(nameStr);
-    const name = /^\s*([^\/*]+)?/.exec(nameStr)[1];
+    const nameMatch = /^\s*([^\/*]+)?/.exec(nameStr);
+    const name = nameMatch && nameMatch[1] ? nameMatch[1].trim() : '';
     const weight = hasWeight ? parseInt(weightRegex.exec(nameStr)[1].replace('/', ''), 10) : 1;
     const count = hasCount ? parseInt(countRegex.exec(nameStr)[1].replace('*', ''), 10) : 1;
     return { name, weight, count };
+  }
+
+  function normalizeName(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  function getOriginalNames() {
+    const value = $('#in_names').value.trim();
+    return value.split(/[,\r\n]/g).map(v => v.trim()).filter(v => !!v);
+  }
+
+  function getSelectedHistory() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_SELECTED) || '[]');
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveSelectedHistory(names) {
+    const seen = new Set();
+    const cleaned = [];
+    names.forEach(name => {
+      const displayName = String(name || '').trim();
+      const key = normalizeName(displayName);
+      if (!displayName || seen.has(key)) return;
+      seen.add(key);
+      cleaned.push(displayName);
+    });
+    localStorage.setItem(STORAGE_SELECTED, JSON.stringify(cleaned));
+  }
+
+  function appendSelectedHistory(names) {
+    const current = getSelectedHistory();
+    const currentKeys = new Set(current.map(normalizeName));
+    const added = [];
+
+    names.forEach(name => {
+      const displayName = String(name || '').trim();
+      const key = normalizeName(displayName);
+      if (!displayName || currentKeys.has(key)) return;
+      current.push(displayName);
+      currentKeys.add(key);
+      added.push(displayName);
+    });
+
+    saveSelectedHistory(current);
+    return added;
+  }
+
+  function shouldExcludeSelected() {
+    return $('#chkExcludeSelected')?.checked ?? true;
+  }
+
+  function getActiveNames() {
+    const original = getOriginalNames();
+    if (!shouldExcludeSelected()) return original;
+
+    const selectedKeys = new Set(getSelectedHistory().map(normalizeName));
+    return original.filter(nameStr => {
+      const parsed = parseName(nameStr);
+      return !selectedKeys.has(normalizeName(parsed.name));
+    });
+  }
+
+  function countNameEntries(names) {
+    return names.reduce((sum, nameStr) => {
+      const parsed = parseName(nameStr);
+      return sum + Math.max(1, Number.isFinite(parsed.count) ? parsed.count : 1);
+    }, 0);
+  }
+
+  function updateSelectionState(activeCount) {
+    const originalCount = countNameEntries(getOriginalNames());
+    const selectedCount = getSelectedHistory().length;
+    const excludedText = shouldExcludeSelected() ? `누적 선정자 ${selectedCount}명 제외 중` : `누적 선정자 ${selectedCount}명 보관 중 · 현재 제외 안 함`;
+    const state = $('#selectionState');
+    if (state) {
+      state.textContent = `전체 ${originalCount}명 · ${excludedText} · 이번 추첨 대상 ${activeCount}명`;
+    }
   }
 
   function setSelectionCount() {
@@ -192,19 +330,70 @@
     const hint = $('#selectionHint');
     if (hint) {
       if (total > 0) {
-        hint.textContent = `총 ${total}명 중 선착순 ${effectiveCount}명 선정`;
+        hint.textContent = `이번 추첨 대상 ${total}명 중 선착순 ${effectiveCount}명 선정`;
       } else {
-        hint.textContent = `참여자 명단을 입력한 뒤 선정 인원을 정해주세요.`;
+        hint.textContent = `추첨 대상이 없습니다. 참여자 명단 또는 제외 설정을 확인해주세요.`;
       }
     }
+    updateSelectionState(total);
   }
 
   function getReady() {
-    const names = getNames();
-    window.roulette.setMarbles(names);
-    ready = names.length > 0;
-    localStorage.setItem('mbr_names', names.join(','));
+    const originalNames = getOriginalNames();
+    localStorage.setItem(STORAGE_NAMES, originalNames.join(','));
+
+    const activeNames = getActiveNames();
+    window.roulette.setMarbles(activeNames);
+    ready = activeNames.length > 0 && window.roulette.getCount() > 0;
     setSelectionCount();
+    return ready;
+  }
+
+  function normalizeNameInput() {
+    const nameSource = getOriginalNames();
+    const nameSet = new Set();
+    const nameCounts = {};
+
+    nameSource.forEach(nameSrc => {
+      const parsed = parseName(nameSrc);
+      if (!parsed.name) return;
+      const key = parsed.weight > 1 ? `${parsed.name}/${parsed.weight}` : parsed.name;
+      if (!nameSet.has(key)) {
+        nameSet.add(key);
+        nameCounts[key] = 0;
+      }
+      nameCounts[key] += Math.max(1, parsed.count);
+    });
+
+    const result = [];
+    Object.keys(nameCounts).forEach(key => {
+      if (nameCounts[key] > 1) {
+        result.push(`${key}*${nameCounts[key]}`);
+      } else {
+        result.push(key);
+      }
+    });
+
+    const oldValue = $('#in_names').value;
+    const newValue = result.join(',');
+    if (oldValue !== newValue) {
+      $('#in_names').value = newValue;
+    }
+  }
+
+  function copySelectedHistory() {
+    const selected = getSelectedHistory();
+    if (!selected.length) {
+      simpleToast('복사할 누적 선정자가 없습니다');
+      return;
+    }
+
+    const text = selected.map((name, index) => `${index + 1}. ${name}`).join('\n');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => simpleToast('누적 선정자 명단을 복사했습니다'));
+    } else {
+      simpleToast('이 브라우저에서는 자동 복사가 어렵습니다');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -226,11 +415,14 @@
     if (namesFromUrl) {
       $('#in_names').value = namesFromUrl.replace(/,/g, '\n');
     } else {
-      const savedNames = localStorage.getItem('mbr_names');
+      const savedNames = localStorage.getItem(STORAGE_NAMES);
       if (savedNames) {
         $('#in_names').value = savedNames;
       }
     }
+
+    const excludeStored = localStorage.getItem(STORAGE_EXCLUDE);
+    $('#chkExcludeSelected').checked = excludeStored === null ? true : excludeStored === 'true';
 
     desiredSelectionCount = parseInt($('#in_winningRank').value, 10) || DEFAULT_SELECTION_COUNT;
 
@@ -239,33 +431,7 @@
     });
 
     $('#in_names').addEventListener('blur', () => {
-      const nameSource = getNames();
-      const nameSet = new Set();
-      const nameCounts = {};
-      nameSource.forEach(nameSrc => {
-        const name = parseName(nameSrc);
-        const key = name.weight > 1 ? `${name.name}/${name.weight}` : name.name;
-        if (!nameSet.has(key)) {
-          nameSet.add(key);
-          nameCounts[key] = 0;
-        }
-        nameCounts[key] += name.count;
-      });
-      const result = [];
-      Object.keys(nameCounts).forEach(key => {
-        if (nameCounts[key] > 1) {
-          result.push(`${key}*${nameCounts[key]}`);
-        } else {
-          result.push(key);
-        }
-      });
-
-      const oldValue = $('#in_names').value;
-      const newValue = result.join(',');
-
-      if (oldValue !== newValue) {
-        $('#in_names').value = newValue;
-      }
+      normalizeNameInput();
       getReady();
     });
 
@@ -275,13 +441,42 @@
       setSelectionCount();
     });
 
+    $('#chkExcludeSelected').addEventListener('change', (e) => {
+      localStorage.setItem(STORAGE_EXCLUDE, e.target.checked ? 'true' : 'false');
+      getReady();
+      simpleToast(e.target.checked ? '누적 선정자를 제외합니다' : '누적 선정자를 제외하지 않습니다');
+    });
+
     $('#btnShuffle').addEventListener('click', () => {
       getReady();
+      simpleToast('명단을 다시 준비했습니다');
+    });
+
+    $('#btnNextDraw').addEventListener('click', () => {
+      $('#chkExcludeSelected').checked = true;
+      localStorage.setItem(STORAGE_EXCLUDE, 'true');
+      getReady();
+      simpleToast('선정자를 제외하고 다음 추첨을 준비했습니다');
+    });
+
+    $('#btnResetSelected').addEventListener('click', () => {
+      const ok = window.confirm('누적 선정자 기록을 모두 지울까요?\n지우면 이전 선정자도 다시 추첨 대상에 포함할 수 있습니다.');
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_SELECTED);
+      getReady();
+      simpleToast('누적 선정자 기록을 초기화했습니다');
+    });
+
+    $('#btnCopySelected').addEventListener('click', () => {
+      copySelectedHistory();
     });
 
     $('#btnStart').addEventListener('click', () => {
       getReady();
-      if (!ready) return;
+      if (!ready) {
+        simpleToast('추첨 대상이 없습니다. 참여자 명단 또는 제외 설정을 확인해주세요');
+        return;
+      }
       window.roulette.start();
       $('#settings')?.classList.add('hide');
     });
@@ -302,8 +497,16 @@
       document.documentElement.classList.toggle('light', !window.options.darkMode);
     });
 
-    window.roulette.addEventListener('goal', () => {
+    window.roulette.addEventListener('goal', (e) => {
       ready = false;
+      const winners = Array.isArray(e.detail?.winners) ? e.detail.winners : (e.detail?.winner ? [e.detail.winner] : []);
+      const added = appendSelectedHistory(winners);
+      updateSelectionState(window.roulette.getCount());
+
+      if (added.length > 0) {
+        simpleToast(`${added.length}명을 누적 선정자에 저장했습니다`);
+      }
+
       setTimeout(() => {
         $('#settings')?.classList.remove('hide');
       }, 8000);
@@ -328,7 +531,7 @@
       option.value = map.index;
       option.innerHTML = map.title;
       option.setAttribute('data-trans', '');
-      window.translateElement(option);
+      if (window.translateElement) window.translateElement(option);
       mapSelector.append(option);
     });
     mapSelector.addEventListener('change', (e) => {
@@ -339,24 +542,11 @@
 
     getReady();
   }
-
-  function simpleToast(msg) {
-    const toast = document.createElement('div');
-    toast.classList.add('toast');
-    toast.innerHTML = msg;
-    if (window.translateElement) {
-      window.translateElement(toast);
-    }
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 1200);
-  }
 </script>
 
 <div id="settings" class="settings">
   <div class="right">
-    <button id="btnToggleSettings" class="btn-toggle-settings">
+    <button id="btnToggleSettings" class="btn-toggle-settings" type="button">
       <span>설정 접기/펼치기</span>
       <i class="toggle-arrow">▲</i>
     </button>
@@ -407,14 +597,24 @@
   <div class="left">
     <h3>참여자 명단 입력</h3>
     <textarea id="in_names" placeholder="이름을 쉼표 또는 엔터로 구분해서 입력하세요">수박*2,키위*2,귤*2,나무*3,정해찬*4</textarea>
-    <div id="selectionHint" class="selection-help">총 0명 중 선착순 30명 선정</div>
+    <div id="selectionHint" class="selection-help">이번 추첨 대상 0명 중 선착순 30명 선정</div>
+    <div id="selectionState" class="selection-state">전체 0명 · 누적 선정자 0명 제외 중 · 이번 추첨 대상 0명</div>
+    <div class="selection-tools">
+      <label for="chkExcludeSelected">
+        <input type="checkbox" id="chkExcludeSelected" checked />
+        이전 선정자 자동 제외
+      </label>
+      <button id="btnNextDraw" type="button">선정자 제외하고 다음 추첨</button>
+      <button id="btnCopySelected" type="button">누적 선정자 복사</button>
+      <button id="btnResetSelected" type="button">선정 기록 초기화</button>
+    </div>
     <div class="actions">
       <button id="btnNotice" type="button">
         <i class="icon megaphone"></i>
       </button>
       <button id="btnShuffle" type="button">
         <i class="icon shuffle"></i>
-        <span>명단 섞기</span>
+        <span>명단 준비</span>
       </button>
       <button id="btnStart" type="button">
         <i class="icon play"></i>

@@ -147,29 +147,13 @@ export class Roulette extends EventTarget {
       if (marble.y > this._stage.goalY) {
         this._winners.push(marble);
         if (this._isRunning && this._winners.length === this._winnerRank + 1) {
-          this.dispatchEvent(new CustomEvent('goal', { detail: { winner: marble.name } }));
-          this._winner = marble;
-          this._isRunning = false;
-          this._particleManager.shot(this._renderer.width, this._renderer.height);
-          setTimeout(() => {
-            this._recorder.stop();
-          }, 1000);
+          this._finishSelection(marble);
         } else if (
           this._isRunning &&
           this._winnerRank === this._winners.length &&
           this._winnerRank === this._totalMarbleCount - 1
         ) {
-          this.dispatchEvent(
-            new CustomEvent('goal', {
-              detail: { winner: this._marbles[i + 1].name },
-            })
-          );
-          this._winner = this._marbles[i + 1];
-          this._isRunning = false;
-          this._particleManager.shot(this._renderer.width, this._renderer.height);
-          setTimeout(() => {
-            this._recorder.stop();
-          }, 1000);
+          this._finishSelection(this._marbles[i + 1] ?? marble);
         }
         setTimeout(() => {
           this.physics.removeMarble(marble.id);
@@ -182,7 +166,30 @@ export class Roulette extends EventTarget {
     this._goalDist = Math.abs(this._stage.zoomY - topY);
     this._timeScale = this._calcTimeScale();
 
-    this._marbles = this._marbles.filter((marble) => marble.y <= this._stage?.goalY);
+    const goalY = this._stage.goalY;
+    this._marbles = this._marbles.filter((marble) => marble.y <= goalY);
+  }
+
+  private _finishSelection(finalMarble: Marble) {
+    const selectedCount = Math.min(this._winnerRank + 1, this._winners.length);
+    const selected = this._winners.slice(0, selectedCount);
+
+    this.dispatchEvent(
+      new CustomEvent('goal', {
+        detail: {
+          winner: finalMarble.name,
+          winners: selected.map((marble) => marble.name),
+          count: selected.length,
+        },
+      })
+    );
+
+    this._winner = finalMarble;
+    this._isRunning = false;
+    this._particleManager.shot(this._renderer.width, this._renderer.height);
+    setTimeout(() => {
+      this._recorder.stop();
+    }, 1000);
   }
 
   private _calcTimeScale(): number {
@@ -311,6 +318,10 @@ export class Roulette extends EventTarget {
   }
 
   public start() {
+    if (this._marbles.length === 0) {
+      return;
+    }
+    this._winner = null;
     this._isRunning = true;
     this._winnerRank = options.winningRank;
     if (this._winnerRank >= this._marbles.length) {
